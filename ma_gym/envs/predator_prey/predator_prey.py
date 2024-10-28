@@ -58,10 +58,12 @@ class PredatorPrey(gym.Env):
         self._prey_capture_reward = prey_capture_reward
         self._agent_view_mask = agent_view_mask
 
-        self.action_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_agents)])
+        self.action_space = MultiAgentActionSpace([spaces.Discrete(len(ACTION_MEANING)) for _ in range(self.n_agents)])
         self.agent_pos = {_: None for _ in range(self.n_agents)}
         self.prey_pos = {_: None for _ in range(self.n_preys)}
         self._prey_alive = None
+        self.agent_wall_bucket = {_: 2 for _ in range(self.n_agents)} # max 2 wall per agent
+        self.walls_pos = []
 
         self._base_grid = self.__create_grid()  # with no agents
         self._full_obs = self.__create_grid()
@@ -107,7 +109,7 @@ class PredatorPrey(gym.Env):
             while True:
                 pos = [self.np_random.randint(0, self._grid_shape[0] - 1),
                        self.np_random.randint(0, self._grid_shape[1] - 1)]
-                if self._is_cell_vacant(pos):
+                if self._is_cell_vacant(pos, agent= True):
                     self.agent_pos[agent_i] = pos
                     break
             self.__update_agent_view(agent_i)
@@ -116,7 +118,7 @@ class PredatorPrey(gym.Env):
             while True:
                 pos = [self.np_random.randint(0, self._grid_shape[0] - 1),
                        self.np_random.randint(0, self._grid_shape[1] - 1)]
-                if self._is_cell_vacant(pos) and (self._neighbour_agents(pos)[0] == 0):
+                if self._is_cell_vacant(pos, agent= False) and (self._neighbour_agents(pos)[0] == 0):
                     self.prey_pos[prey_i] = pos
                     break
             self.__update_prey_view(prey_i)
@@ -137,6 +139,7 @@ class PredatorPrey(gym.Env):
                         _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 1  # get relative position for the prey loc.
 
             _agent_i_obs += _prey_pos.flatten().tolist()  # adding prey pos in observable area
+            _agent_i_obs += [self.agent_wall_bucket[agent_i]] # adding remaining wall block
             _agent_i_obs += [self._step_count / self._max_steps]  # adding time
             _obs.append(_agent_i_obs)
 
@@ -149,6 +152,8 @@ class PredatorPrey(gym.Env):
         self._total_episode_reward = [0 for _ in range(self.n_agents)]
         self.agent_pos = {}
         self.prey_pos = {}
+        self.walls_pos = []
+        self.agent_wall_bucket = {_: 2 for _ in range(self.n_agents)}
 
         self.__init_full_obs()
         self._step_count = 0
@@ -165,8 +170,17 @@ class PredatorPrey(gym.Env):
     def is_valid(self, pos):
         return (0 <= pos[0] < self._grid_shape[0]) and (0 <= pos[1] < self._grid_shape[1])
 
-    def _is_cell_vacant(self, pos):
-        return self.is_valid(pos) and (self._full_obs[pos[0]][pos[1]] == PRE_IDS['empty'])
+    def _is_cell_vacant(self, pos, agent):
+
+        if self.is_valid(pos):
+            if agent:
+                return self._full_obs[pos[0]][pos[1]] == PRE_IDS['empty']
+            else:
+                return (self._full_obs[pos[0]][pos[1]] == PRE_IDS['empty']) and (pos not in self.walls_pos)
+        else:
+            return False
+
+        # return self.is_valid(pos) and self._full_obs[pos[0]][pos[1]] == PRE_IDS['empty']    
 
     def __update_agent_pos(self, agent_i, move):
 
@@ -182,12 +196,17 @@ class PredatorPrey(gym.Env):
             next_pos = [curr_pos[0], curr_pos[1] + 1]
         elif move == 4:  # no-op
             pass
+        elif move == 5:
+            if (self.agent_wall_bucket[agent_i] > 0):
+                self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['wall']
+                self.agent_wall_bucket[agent_i] -= 1
+                self.walls_pos.append([curr_pos[0], curr_pos[1]])
         else:
             raise Exception('Action Not found!')
 
-        if next_pos is not None and self._is_cell_vacant(next_pos):
-            self.agent_pos[agent_i] = next_pos
+        if next_pos is not None and self._is_cell_vacant(next_pos,agent=True):
             self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['empty']
+            self.agent_pos[agent_i] = next_pos
             self.__update_agent_view(agent_i)
 
     def __next_pos(self, curr_pos, move):
@@ -220,7 +239,7 @@ class PredatorPrey(gym.Env):
             else:
                 raise Exception('Action Not found!')
 
-            if next_pos is not None and self._is_cell_vacant(next_pos):
+            if next_pos is not None and self._is_cell_vacant(next_pos, agent= False):
                 self.prey_pos[prey_i] = next_pos
                 self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['empty']
                 self.__update_prey_view(prey_i)
@@ -338,6 +357,9 @@ class PredatorPrey(gym.Env):
                 fill_cell(img, neighbour, cell_size=CELL_SIZE, fill=AGENT_NEIGHBORHOOD_COLOR, margin=0.1)
             fill_cell(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=AGENT_NEIGHBORHOOD_COLOR, margin=0.1)
 
+        for wall in self.walls_pos:
+            fill_cell(img,wall,cell_size=CELL_SIZE,fill=WALL_COLOR, margin=0.1)
+
         for agent_i in range(self.n_agents):
             draw_circle(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=AGENT_COLOR)
             write_cell_text(img, text=str(agent_i + 1), pos=self.agent_pos[agent_i], cell_size=CELL_SIZE,
@@ -386,6 +408,7 @@ ACTION_MEANING = {
     2: "UP",
     3: "RIGHT",
     4: "NOOP",
+    5: "BLOCK"
 }
 
 PRE_IDS = {
