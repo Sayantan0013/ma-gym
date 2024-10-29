@@ -367,7 +367,10 @@ class PredatorPrey(gym.Env):
         if self.viewer is not None:
             self.viewer.close()
             self.viewer = None
-
+    def get_agent_pos(self):
+        return self.agent_pos
+    def get_prey_pos(self):
+        return self.prey_pos
 
 AGENT_COLOR = ImageColor.getcolor('blue', mode='RGB')
 AGENT_NEIGHBORHOOD_COLOR = (186, 238, 247)
