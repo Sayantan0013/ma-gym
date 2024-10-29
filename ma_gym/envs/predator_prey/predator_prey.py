@@ -137,6 +137,8 @@ class PredatorPrey(gym.Env):
                 for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
                     if PRE_IDS['prey'] in self._full_obs[row][col]:
                         _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 1  # get relative position for the prey loc.
+                    elif PRE_IDS['wall'] in self._full_obs[row][col]:
+                        _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = -1  # get relative position for the prey loc.
 
             _agent_i_obs += _prey_pos.flatten().tolist()  # adding prey pos in observable area
             _agent_i_obs += [self.agent_wall_bucket[agent_i]] # adding remaining wall block
@@ -205,7 +207,10 @@ class PredatorPrey(gym.Env):
             raise Exception('Action Not found!')
 
         if next_pos is not None and self._is_cell_vacant(next_pos,agent=True):
-            self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['empty']
+            if curr_pos in self.walls_pos:
+                self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['wall']
+            else:
+                self._full_obs[curr_pos[0]][curr_pos[1]] = PRE_IDS['empty']
             self.agent_pos[agent_i] = next_pos
             self.__update_agent_view(agent_i)
 
