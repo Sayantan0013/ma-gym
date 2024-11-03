@@ -215,7 +215,15 @@ class PredatorPrey(gym.Env):
                 next_pos = [curr_pos[0] - 1, curr_pos[1]]
             elif move == 3:  # right
                 next_pos = [curr_pos[0], curr_pos[1] + 1]
-            elif move == 4:  # no-op
+            elif move == 4: # right up
+                next_pos = [curr_pos[0] - 1, curr_pos[1] + 1]
+            elif move == 5: # right down
+                next_pos = [curr_pos[0] + 1, curr_pos[1] + 1]
+            elif move == 6: # left up
+                next_pos = [curr_pos[0] - 1, curr_pos[1] - 1]
+            elif move == 7: # left down
+                next_pos = [curr_pos[0] + 1, curr_pos[1] - 1]
+            elif move == 8:  # no-op
                 pass
             else:
                 raise Exception('Action Not found!')
@@ -283,7 +291,7 @@ class PredatorPrey(gym.Env):
                 prey_move = None
                 if self._prey_alive[prey_i]:
                     # 5 trails : we sample next move and check if prey (smart) doesn't go in neighbourhood of predator
-                    for _ in range(5):
+                    for _ in range(9):
                         _move = self.np_random.choice(len(self._prey_move_probs), 1, p=self._prey_move_probs)[0]
                         if self._neighbour_agents(self.__next_pos(self.prey_pos[prey_i], _move))[0] == 0:
                             prey_move = _move
