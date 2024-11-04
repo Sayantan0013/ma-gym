@@ -199,7 +199,15 @@ class PredatorPrey(gym.Env):
             next_pos = [curr_pos[0] - 1, curr_pos[1]]
         elif move == 3:  # right
             next_pos = [curr_pos[0], curr_pos[1] + 1]
-        elif move == 4:  # no-op
+        elif move == 4: # right up
+            next_pos = [curr_pos[0] - 1, curr_pos[1] + 1]
+        elif move == 5: # right down
+            next_pos = [curr_pos[0] + 1, curr_pos[1] + 1]
+        elif move == 6: # left up
+            next_pos = [curr_pos[0] - 1, curr_pos[1] - 1]
+        elif move == 7: # left down
+            next_pos = [curr_pos[0] + 1, curr_pos[1] - 1]
+        elif move == 8:  # no-op
             next_pos = curr_pos
         return next_pos
 
