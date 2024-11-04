@@ -37,7 +37,7 @@ class PredatorPrey(gym.Env):
     """
     metadata = {'render.modes': ['human', 'rgb_array']}
 
-    def __init__(self, grid_shape=(5, 5), n_agents=2, n_preys=1, prey_move_probs=(0.175, 0.175, 0.175, 0.175, 0.3),
+    def __init__(self, grid_shape=(5, 5), n_agents=2, n_preys=1, prey_move_probs=(0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.2),
                  full_observable=False, penalty=-0.5, step_cost=-0.01, prey_capture_reward=5, max_steps=100,
                  agent_view_mask=(5, 5)):
         assert len(grid_shape) == 2, 'expected a tuple of size 2 for grid_shape, but found {}'.format(grid_shape)
@@ -296,7 +296,7 @@ class PredatorPrey(gym.Env):
                         if self._neighbour_agents(self.__next_pos(self.prey_pos[prey_i], _move))[0] == 0:
                             prey_move = _move
                             break
-                    prey_move = 4 if prey_move is None else prey_move  # default is no-op(4)
+                    prey_move = 8 if prey_move is None else prey_move  # default is no-op(4)
 
                 self.__update_prey_pos(prey_i, prey_move)
 
