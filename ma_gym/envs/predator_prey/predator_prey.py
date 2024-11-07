@@ -38,7 +38,7 @@ class PredatorPrey(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
     def __init__(self, grid_shape=(5, 5), n_agents=2, n_preys=1, prey_move_probs=(0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.2),
-                 full_observable=False, penalty=-0.5, time_penalty = -0.5, step_cost=-0.01, prey_capture_reward=5, max_steps=100,
+                 full_observable=False, penalty=-0.5, step_cost=-0.01, prey_capture_reward=5, max_steps=100,
                  agent_view_mask=(5, 5)):
         assert len(grid_shape) == 2, 'expected a tuple of size 2 for grid_shape, but found {}'.format(grid_shape)
         assert len(agent_view_mask) == 2, 'expected a tuple of size 2 for agent view mask,' \
@@ -57,7 +57,6 @@ class PredatorPrey(gym.Env):
         self._step_cost = step_cost
         self._prey_capture_reward = prey_capture_reward
         self._agent_view_mask = agent_view_mask
-        self._time_penalty = time_penalty
 
         self.action_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_agents)])
         self.agent_pos = {_: None for _ in range(self.n_agents)}
@@ -295,7 +294,7 @@ class PredatorPrey(gym.Env):
                     self._prey_alive[prey_i] = (predator_neighbour_count == 1)
 
                     for agent_i in range(self.n_agents):
-                        rewards[agent_i] += _reward + self._time_penalty/self._max_steps
+                        rewards[agent_i] += _reward
 
                 prey_move = None
                 if self._prey_alive[prey_i]:
