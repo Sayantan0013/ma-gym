@@ -283,8 +283,23 @@ class PredatorPrey(gym.Env):
                 prey_move = None
                 if self._prey_alive[prey_i]:
                     # 5 trails : we sample next move and check if prey (smart) doesn't go in neighbourhood of predator
+                    # We want the prey to move to a position that has zero neibouring agents
+                    # if any of the neibouring spots have neigbouring agents it should try to move to some other spot
+                    # if all of the spots have zero neibouring agents then it follows the original scheme of moving
+                    # The neigbour_agents function doesnt tell if its a feasible  position
+                    # just removing the unsafe spots from the positions it boosts the possibility of moving 
+                    safe_spots = np.zeros(len(self._prey_move_probs))
+                    safe_spots[-1] = 1
+                    for _move in range(4):
+                        if self._neighbour_agents(self.__next_pos(self.prey_pos[prey_i], _move))[0] == 0:
+                            safe_spots[_move] = 1
+                    
+                    cur_prey_move_probs = np.copy(self._prey_move_probs)
+                    cur_prey_move_probs = cur_prey_move_probs*safe_spots
+                    cur_prey_move_probs = cur_prey_move_probs/cur_prey_move_probs.sum()
+                        
                     for _ in range(5):
-                        _move = self.np_random.choice(len(self._prey_move_probs), 1, p=self._prey_move_probs)[0]
+                        _move = self.np_random.choice(len(self._prey_move_probs), 1, p=cur_prey_move_probs)[0]
                         if self._neighbour_agents(self.__next_pos(self.prey_pos[prey_i], _move))[0] == 0:
                             prey_move = _move
                             break
