@@ -289,12 +289,16 @@ class PredatorPrey(gym.Env):
                     # The neigbour_agents function doesnt tell if its a feasible  position
                     # just removing the unsafe spots from the positions it boosts the possibility of moving 
                     safe_spots = np.zeros(len(self._prey_move_probs))
-                    safe_spots[-1] = 1
-                    for _move in range(4):
-                        if self._neighbour_agents(self.__next_pos(self.prey_pos[prey_i], _move))[0] == 0:
-                            safe_spots[_move] = 1
+                    for _move in range(5):
+                        if self.is_valid(self.__next_pos(self.prey_pos[prey_i], _move)) \
+                                and self._neighbour_agents(self.__next_pos(self.prey_pos[prey_i], _move))[0] == 0:
+                            safe_spots[_move] = 1   # trying to go only to safe spots
                     
                     cur_prey_move_probs = np.copy(self._prey_move_probs)
+
+                    if(np.sum(safe_spots) == 0):
+                        safe_spots += 1 # Back to original Probability
+                        
                     cur_prey_move_probs = cur_prey_move_probs*safe_spots
                     cur_prey_move_probs = cur_prey_move_probs/cur_prey_move_probs.sum()
                         
