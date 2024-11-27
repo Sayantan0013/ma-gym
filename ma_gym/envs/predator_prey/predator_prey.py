@@ -312,6 +312,9 @@ class PredatorPrey(gym.Env):
                 self.__update_prey_pos(prey_i, prey_move)
 
         if (self._step_count >= self._max_steps) or (True not in self._prey_alive):
+            if(True not in self._prey_alive):
+                for agent_i in range(self.n_agents):
+                        rewards[agent_i] += _reward*2
             for i in range(self.n_agents):
                 self._agent_dones[i] = True
 
