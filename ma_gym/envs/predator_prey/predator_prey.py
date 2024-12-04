@@ -358,7 +358,7 @@ class PredatorPrey(gym.Env):
             fill_cell(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=AGENT_NEIGHBORHOOD_COLOR, margin=0.1)
 
         for agent_i in range(self.n_agents):
-            draw_circle(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=AGENT_COLOR)
+            draw_circle(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=IMPOSTER_COLOR if agent_i == 0 else AGENT_COLOR )
             write_cell_text(img, text=str(agent_i + 1), pos=self.agent_pos[agent_i], cell_size=CELL_SIZE,
                             fill='white', margin=0.4)
 
@@ -392,6 +392,7 @@ class PredatorPrey(gym.Env):
         return self.prey_pos
 
 AGENT_COLOR = ImageColor.getcolor('blue', mode='RGB')
+IMPOSTER_COLOR = ImageColor.getcolor('green', mode='RGB')
 AGENT_NEIGHBORHOOD_COLOR = (186, 238, 247)
 PREY_COLOR = 'red'
 
