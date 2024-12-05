@@ -122,18 +122,26 @@ class PredatorPrey(gym.Env):
             self.__update_prey_view(prey_i)
 
         self.__draw_base_img()
+    
+    def _normalize_row_pos(self,row_pos):
+        return (row_pos + self._grid_shape[0])%self._grid_shape[0]
+    
+    def _normalize_col_pos(self,col_pos):
+        return (col_pos + self._grid_shape[1])%self._grid_shape[1]
 
     def get_agent_obs(self):
         _obs = []
         for agent_i in range(self.n_agents):
             pos = self.agent_pos[agent_i]
-            _agent_i_obs = [pos[0] / (self._grid_shape[0] - 1), pos[1] / (self._grid_shape[1] - 1)]  # coordinates
+            row_pos = (pos[0] / (self._grid_shape[0] ))*np.pi
+            col_pos = (pos[1] / (self._grid_shape[1] ))*np.pi
+            _agent_i_obs = [np.sin(row_pos),np.cos(row_pos),np.sin(col_pos),np.cos(col_pos)]  # coordinates
 
             # check if prey is in the view area
             _prey_pos = np.zeros(self._agent_view_mask)  # prey location in neighbour
-            for row in range(max(0, pos[0] - 2), min(pos[0] + 2 + 1, self._grid_shape[0])):
-                for col in range(max(0, pos[1] - 2), min(pos[1] + 2 + 1, self._grid_shape[1])):
-                    if PRE_IDS['prey'] in self._full_obs[row][col]:
+            for row in range(pos[0] - 2, pos[0] + 2 + 1):
+                for col in range( pos[1] - 2, pos[1] + 2 + 1):
+                    if PRE_IDS['prey'] in self._full_obs[self._normalize_row_pos(row)][self._normalize_col_pos(col)]:
                         _prey_pos[row - (pos[0] - 2), col - (pos[1] - 2)] = 1  # get relative position for the prey loc.
 
             _agent_i_obs += _prey_pos.flatten().tolist()  # adding prey pos in observable area
@@ -173,13 +181,13 @@ class PredatorPrey(gym.Env):
         curr_pos = copy.copy(self.agent_pos[agent_i])
         next_pos = None
         if move == 0:  # down
-            next_pos = [curr_pos[0] + 1, curr_pos[1]]
+            next_pos = [self._normalize_row_pos(curr_pos[0] + 1), curr_pos[1]]
         elif move == 1:  # left
-            next_pos = [curr_pos[0], curr_pos[1] - 1]
+            next_pos = [curr_pos[0], self._normalize_col_pos(curr_pos[1] - 1)]
         elif move == 2:  # up
-            next_pos = [curr_pos[0] - 1, curr_pos[1]]
+            next_pos = [self._normalize_row_pos(curr_pos[0] - 1), curr_pos[1]]
         elif move == 3:  # right
-            next_pos = [curr_pos[0], curr_pos[1] + 1]
+            next_pos = [curr_pos[0], self._normalize_col_pos(curr_pos[1] + 1)]
         elif move == 4:  # no-op
             pass
         else:
@@ -192,13 +200,13 @@ class PredatorPrey(gym.Env):
 
     def __next_pos(self, curr_pos, move):
         if move == 0:  # down
-            next_pos = [curr_pos[0] + 1, curr_pos[1]]
+            next_pos = [self._normalize_row_pos(curr_pos[0] + 1), curr_pos[1]]
         elif move == 1:  # left
-            next_pos = [curr_pos[0], curr_pos[1] - 1]
+            next_pos = [curr_pos[0], self._normalize_col_pos(curr_pos[1] - 1)]
         elif move == 2:  # up
-            next_pos = [curr_pos[0] - 1, curr_pos[1]]
+            next_pos = [self._normalize_row_pos(curr_pos[0] - 1), curr_pos[1]]
         elif move == 3:  # right
-            next_pos = [curr_pos[0], curr_pos[1] + 1]
+            next_pos = [curr_pos[0], self._normalize_col_pos(curr_pos[1] + 1)]
         elif move == 4:  # no-op
             next_pos = curr_pos
         return next_pos
@@ -208,13 +216,13 @@ class PredatorPrey(gym.Env):
         if self._prey_alive[prey_i]:
             next_pos = None
             if move == 0:  # down
-                next_pos = [curr_pos[0] + 1, curr_pos[1]]
+                next_pos = [self._normalize_row_pos(curr_pos[0] + 1), curr_pos[1]]
             elif move == 1:  # left
-                next_pos = [curr_pos[0], curr_pos[1] - 1]
+                next_pos = [curr_pos[0],  self._normalize_col_pos(curr_pos[1] - 1)]
             elif move == 2:  # up
-                next_pos = [curr_pos[0] - 1, curr_pos[1]]
+                next_pos = [self._normalize_row_pos(curr_pos[0] - 1), curr_pos[1]]
             elif move == 3:  # right
-                next_pos = [curr_pos[0], curr_pos[1] + 1]
+                next_pos = [curr_pos[0],  self._normalize_col_pos(curr_pos[1] + 1)]
             elif move == 4:  # no-op
                 pass
             else:
@@ -240,17 +248,17 @@ class PredatorPrey(gym.Env):
         # check if agent is in neighbour
         _count = 0
         neighbours_xy = []
-        if self.is_valid([pos[0] + 1, pos[1]]) and PRE_IDS['agent'] in self._full_obs[pos[0] + 1][pos[1]]:
+        if self.is_valid([ self._normalize_row_pos(pos[0] + 1), pos[1]]) and PRE_IDS['agent'] in self._full_obs[self._normalize_row_pos(pos[0] + 1)][pos[1]]:
             _count += 1
-            neighbours_xy.append([pos[0] + 1, pos[1]])
-        if self.is_valid([pos[0] - 1, pos[1]]) and PRE_IDS['agent'] in self._full_obs[pos[0] - 1][pos[1]]:
+            neighbours_xy.append([self._normalize_row_pos(pos[0] + 1), pos[1]])
+        if self.is_valid([self._normalize_row_pos(pos[0] - 1), pos[1]]) and PRE_IDS['agent'] in self._full_obs[self._normalize_row_pos(pos[0] - 1)][pos[1]]:
             _count += 1
-            neighbours_xy.append([pos[0] - 1, pos[1]])
-        if self.is_valid([pos[0], pos[1] + 1]) and PRE_IDS['agent'] in self._full_obs[pos[0]][pos[1] + 1]:
+            neighbours_xy.append([self._normalize_row_pos(pos[0] - 1), pos[1]])
+        if self.is_valid([pos[0], self._normalize_col_pos(pos[1] + 1)]) and PRE_IDS['agent'] in self._full_obs[pos[0]][self._normalize_col_pos(pos[1] + 1)]:
             _count += 1
-            neighbours_xy.append([pos[0], pos[1] + 1])
-        if self.is_valid([pos[0], pos[1] - 1]) and PRE_IDS['agent'] in self._full_obs[pos[0]][pos[1] - 1]:
-            neighbours_xy.append([pos[0], pos[1] - 1])
+            neighbours_xy.append([pos[0], self._normalize_col_pos(pos[1] + 1)])
+        if self.is_valid([pos[0], self._normalize_col_pos(pos[1] - 1)]) and PRE_IDS['agent'] in self._full_obs[pos[0]][self._normalize_col_pos(pos[1] - 1)]:
+            neighbours_xy.append([pos[0], self._normalize_col_pos(pos[1] - 1)])
             _count += 1
 
         agent_id = []
@@ -337,14 +345,14 @@ class PredatorPrey(gym.Env):
 
     def __get_neighbour_coordinates(self, pos):
         neighbours = []
-        if self.is_valid([pos[0] + 1, pos[1]]):
-            neighbours.append([pos[0] + 1, pos[1]])
-        if self.is_valid([pos[0] - 1, pos[1]]):
-            neighbours.append([pos[0] - 1, pos[1]])
-        if self.is_valid([pos[0], pos[1] + 1]):
-            neighbours.append([pos[0], pos[1] + 1])
-        if self.is_valid([pos[0], pos[1] - 1]):
-            neighbours.append([pos[0], pos[1] - 1])
+        if self.is_valid([self._normalize_row_pos(pos[0] + 1), pos[1]]):
+            neighbours.append([self._normalize_row_pos(pos[0] + 1), pos[1]])
+        if self.is_valid([self._normalize_row_pos(pos[0] - 1), pos[1]]):
+            neighbours.append([self._normalize_row_pos(pos[0] - 1), pos[1]])
+        if self.is_valid([pos[0], self._normalize_col_pos(pos[1] + 1)]):
+            neighbours.append([pos[0], self._normalize_col_pos(pos[1] + 1)])
+        if self.is_valid([pos[0], self._normalize_col_pos(pos[1] - 1)]):
+            neighbours.append([pos[0], self._normalize_col_pos(pos[1] - 1)])
         return neighbours
 
     def render(self, mode='human'):
