@@ -39,7 +39,7 @@ class PredatorPrey(gym.Env):
 
     def __init__(self, grid_shape=(5, 5), n_agents=2, n_preys=1, prey_move_probs=(0.175, 0.175, 0.175, 0.175, 0.3),
                  full_observable=False, penalty=-0.5, step_cost=-0.01, prey_capture_reward=5, max_steps=100,
-                 agent_view_mask=(5, 5)):
+                 agent_view_mask=(5, 5), is_interactive = False):
         assert len(grid_shape) == 2, 'expected a tuple of size 2 for grid_shape, but found {}'.format(grid_shape)
         assert len(agent_view_mask) == 2, 'expected a tuple of size 2 for agent view mask,' \
                                           ' but found {}'.format(agent_view_mask)
@@ -57,6 +57,7 @@ class PredatorPrey(gym.Env):
         self._step_cost = step_cost
         self._prey_capture_reward = prey_capture_reward
         self._agent_view_mask = agent_view_mask
+        self.is_interactive = is_interactive
 
         self.action_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_agents)])
         self.agent_pos = {_: None for _ in range(self.n_agents)}
@@ -311,7 +312,7 @@ class PredatorPrey(gym.Env):
 
                 self.__update_prey_pos(prey_i, prey_move)
 
-        if (self._step_count >= self._max_steps) or (True not in self._prey_alive):
+        if ( not self.is_interactive ) and ((self._step_count >= self._max_steps) or (True not in self._prey_alive)):
             for i in range(self.n_agents):
                 self._agent_dones[i] = True
 
@@ -392,7 +393,7 @@ class PredatorPrey(gym.Env):
         return self.prey_pos
 
 AGENT_COLOR = ImageColor.getcolor('blue', mode='RGB')
-IMPOSTER_COLOR = ImageColor.getcolor('green', mode='RGB')
+IMPOSTER_COLOR = ImageColor.getcolor('black', mode='RGB')
 AGENT_NEIGHBORHOOD_COLOR = (186, 238, 247)
 PREY_COLOR = 'red'
 
